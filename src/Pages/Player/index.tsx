@@ -54,7 +54,7 @@ const Players = () => {
 
         <PlayersContainer>
           {PlayerInformation?.map((player: Player) => (
-            <PlayerContainer key={player.id}>
+            <PlayerContainer key={player.id} onClick={() => navigate(`/players/${teamId}/${player.id}`)} >
               <FlipCardInner className="flip-card-inner">
                 <FlipCardFront>
                   <img src={player.image_url} alt={player.name} style={{ width: '100%', height: 'auto' }} />
