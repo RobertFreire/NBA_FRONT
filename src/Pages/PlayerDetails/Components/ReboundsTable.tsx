@@ -21,6 +21,10 @@ const columnsRebounds = [
         cell: info => info.getValue(),
         header: () => <span>Desvio Padrão de Rebotes</span>,
     }),
+    columnHelperRebounds.accessor('percentage_below_average.rebounds', {
+        cell: info => `${info.getValue()}%`,
+        header: () => <span>Porcentagem Abaixo da Média</span>,
+    }),
 ];
 
 const ReboundsTable = ({ data }: { data: PlayerStats }) => {

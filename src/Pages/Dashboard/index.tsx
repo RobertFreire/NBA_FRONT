@@ -18,11 +18,14 @@ import LineGraph from '../../Components/Graphs/LineGraph'
 import ScatterGraph from '../../Components/Graphs/ScatterGraph'
 import Select from '../../Components/Select';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, RadialLinearScale, PointElement, LineElement)
 
 const Dashboard = () => {
+
+    const navigate = useNavigate();
 
     const [selectedTab, setSelectedTab] = useState('Jogos');
     const [selectedSeason, setSelectedSeason] = useState('2023-24');
@@ -215,7 +218,7 @@ const Dashboard = () => {
                         />)}
                 </>);
             case 'Jogadores':
-                return <div>Sem Dados</div>;
+                return <>{navigate('/players/1610612740')}</>;
             default:
                 return <></>;
         }

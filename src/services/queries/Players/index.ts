@@ -1,5 +1,5 @@
 import api from "../../axios"
-import { Player, PlayerGame, PlayerGamesHomeAndAway, PlayerSeasonVsCareer, PlayerStats } from "./interface"
+import { Player, PlayerCareerStats, PlayerGame, PlayerGamesHomeAndAway, PlayerSeasonVsCareer, PlayerStats } from "./interface"
 
 export async function getTeamPlayer(teamid: number) {
     const { data } = await api.get<Player[]>(`/team/${teamid}/players`)
@@ -20,6 +20,12 @@ export async function getPlayerSeasonVsCareer(playerid: number) {
     const { data } = await api.get<PlayerSeasonVsCareer>(`/player/${playerid}/season_vs_career`)
     return data
 }
+
+export async function getPlayerCareerStats(playerid: number) {
+    const { data } = await api.get<PlayerCareerStats>(`/player/${playerid}/career_stats`)
+    return data
+}
+
 
 export async function getPlayerGames(playerid: number) {
     const { data } = await api.get<PlayerGame[]>(`/player/${playerid}/games`)

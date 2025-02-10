@@ -21,6 +21,10 @@ const columnsPoints = [
         cell: info => info.getValue(),
         header: () => <span>Desvio Padrão de Pontos</span>,
     }),
+    columnHelperPoints.accessor('percentage_below_average.points', {
+        cell: info => `${info.getValue()}%`,
+        header: () => <span>Porcentagem Abaixo da Média</span>,
+    }),
 ];
 
 const PointsTable = ({ data }: { data: PlayerStats }) => {

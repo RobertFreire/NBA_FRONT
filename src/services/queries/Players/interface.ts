@@ -17,6 +17,7 @@ export interface TeamInformation {
 }
 
 export interface PlayerStats {
+    player_id: number;
     average: {
         assists: number;
         points: number;
@@ -32,7 +33,11 @@ export interface PlayerStats {
         points: number;
         rebounds: number;
     };
-    player_id: number;
+    percentage_below_average: {
+        assists: number;
+        points: number;
+        rebounds: number;
+    };
     standard_deviation: {
         assists: number;
         points: number;
@@ -95,4 +100,13 @@ export interface PlayerGamesHomeAndAway {
     home_vs_opponent: number;
     total_away_games: number;
     total_home_games: number;
+}
+
+export interface PlayerCareerStats {
+    career: {
+        total_assists: number;
+        total_points: number;
+        total_rebounds: number;
+    };
+    player_id: number;
 }

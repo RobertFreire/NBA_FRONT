@@ -1,6 +1,6 @@
 import { Container, MarketingText } from './styles'
 import { MarketingImage } from '../TeamDetails/styles'
-import { getPlayer, getPlayerGames, getPlayerGamesHomeAndAway, getPlayerStats } from '../../services/queries/Players';
+import { getPlayer, getPlayerCareerStats, getPlayerGames, getPlayerGamesHomeAndAway, getPlayerSeasonVsCareer, getPlayerStats } from '../../services/queries/Players';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Select from '../../Components/Select';
@@ -9,6 +9,10 @@ import GamesTable from './Components/GamesTable';
 import ReboundsTable from './Components/ReboundsTable';
 import AssistsTable from './Components/AssistsTable';
 import PointsTable from './Components/PointsTable';
+import CareerTable from './Components/CarrerTable';
+import CareerStatsTable from './Components/CarrerStatsTable';
+import BoxPlotGraph from './Components/BoxPlotGraph';
+import DistributionGraph from './Components/DistributionGraph';
 
 const PlayerDetails = () => {
 
@@ -53,8 +57,26 @@ const PlayerDetails = () => {
         enabled: !!playerId,
     });
 
-    const isLoading = isLoadingPlayerInformation || isLoadingPlayerGames || isLoadingPlayerGamesHomeAndAway || isLoadingPlayerStats
-    const isError = isErrorPlayerInformation || isErrorPlayerGames || isErrorPlayerGamesHomeAndAway || isErrorPlayerStats
+    const { data: CarrerStats,
+        isLoading: isLoadingCarrerStats,
+        isError: isErrorCarrerStats,
+    } = useQuery({
+        queryKey: ['carrerStats', playerId],
+        queryFn: () => getPlayerCareerStats(Number(playerId)),
+        enabled: !!playerId,
+    });
+
+    const { data: CarrerPlayer,
+        isLoading: isLoadingCarrerPlayer,
+        isError: isErrorCarrerPlayer,
+    } = useQuery({
+        queryKey: ['carrerPlayer', playerId],
+        queryFn: () => getPlayerSeasonVsCareer(Number(playerId)),
+        enabled: !!playerId,
+    });
+
+    const isLoading = isLoadingPlayerInformation || isLoadingPlayerGames || isLoadingPlayerGamesHomeAndAway || isLoadingPlayerStats || isLoadingCarrerPlayer || isLoadingCarrerStats
+    const isError = isErrorPlayerInformation || isErrorPlayerGames || isErrorPlayerGamesHomeAndAway || isErrorPlayerStats || isErrorCarrerPlayer || isErrorCarrerStats
 
     const adversaries = useMemo(() => {
         if (!PlayerGames) return [];
@@ -101,8 +123,52 @@ const PlayerDetails = () => {
                         </>
                     )}
                 </div>)
+            case 'Carreira':
+                return (<>
+                    {CarrerStats &&
+                        <CareerStatsTable data={CarrerStats} />}
+                    {CarrerPlayer &&
+                        <CareerTable data={CarrerPlayer} />}
+                </>)
             case 'Gráficos':
-                return (<></>)
+                return (
+                    <>
+                        {PlayerStats && (
+                            <>
+                                <DistributionGraph
+                                    labels={['Jogador 1']}
+                                    average={[PlayerStats.average.points]}
+                                    median={[PlayerStats.median.points]}
+                                    mode={[PlayerStats.mode.points]}
+                                    title="Distribuição de Pontos"
+                                />
+                                <DistributionGraph
+                                    labels={['Jogador 1']}
+                                    average={[PlayerStats.average.rebounds]}
+                                    median={[PlayerStats.median.rebounds]}
+                                    mode={[PlayerStats.mode.rebounds]}
+                                    title="Distribuição de Rebotes"
+                                />
+                                <DistributionGraph
+                                    labels={['Jogador 1']}
+                                    average={[PlayerStats.average.assists]}
+                                    median={[PlayerStats.median.assists]}
+                                    mode={[PlayerStats.mode.assists]}
+                                    title="Distribuição de Assistências"
+                                />
+                                <BoxPlotGraph
+                                    labels={['Pontos', 'Rebotes', 'Assistências']}
+                                    data={[
+                                        [PlayerStats.average.points, PlayerStats.median.points, PlayerStats.mode.points],
+                                        [PlayerStats.average.rebounds, PlayerStats.median.rebounds, PlayerStats.mode.rebounds],
+                                        [PlayerStats.average.assists, PlayerStats.median.assists, PlayerStats.mode.assists],
+                                    ]}
+                                    title="Box Plot de Pontos, Rebotes e Assistências"
+                                />
+                            </>
+                        )}
+                    </>
+                );
             default:
                 return <></>;
         }
@@ -119,7 +185,7 @@ const PlayerDetails = () => {
                     </MarketingText>
                 </MarketingImage>
 
-                <Select options={['Jogos', 'Estatisticas', 'Gráficos']} onChange={setSelectedTab} />
+                <Select options={['Jogos', 'Carreira', 'Estatisticas', 'Gráficos']} onChange={setSelectedTab} />
 
                 {renderTabContent()}
             </Container>

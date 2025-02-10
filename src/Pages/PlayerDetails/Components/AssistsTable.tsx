@@ -21,6 +21,10 @@ const columnsAssists = [
         cell: info => info.getValue(),
         header: () => <span>Desvio Padrão de Assistências</span>,
     }),
+    columnHelperAssists.accessor('percentage_below_average.points', {
+        cell: info => `${info.getValue()}%`,
+        header: () => <span>Porcentagem Abaixo da Média</span>,
+    }),
 ];
 
 const AssistsTable = ({ data }: { data: PlayerStats }) => {
