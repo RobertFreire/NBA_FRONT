@@ -1,6 +1,6 @@
 import { Container, MarketingText } from './styles'
 import { MarketingImage } from '../TeamDetails/styles'
-import { getPlayer, getPlayerCareerStats, getPlayerGames, getPlayerGamesHomeAndAway, getPlayerSeasonVsCareer, getPlayerStats } from '../../services/queries/Players';
+import { getPlayer, getPlayerCareerStats, getPlayerGames, getPlayerGamesHomeAndAway, getPlayerGAMStats, getPlayerGumbelStats, getPlayerRegressionLinearStats, getPlayerRegressionLogisticStats, getPlayerSeasonVsCareer, getPlayerStats } from '../../services/queries/Players';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Select from '../../Components/Select';
@@ -13,6 +13,8 @@ import CareerTable from './Components/CarrerTable';
 import CareerStatsTable from './Components/CarrerStatsTable';
 import BoxPlotGraph from './Components/BoxPlotGraph';
 import DistributionGraph from './Components/DistributionGraph';
+import GumbelStatsTable from './Components/GumbelStatsTable';
+import PredictionGraphs from './Components/PredictionGraphs';
 
 const PlayerDetails = () => {
 
@@ -20,6 +22,9 @@ const PlayerDetails = () => {
 
     const [selectedTab, setSelectedTab] = useState('Jogos');
     const [selectedAdversary, setSelectedAdversary] = useState<string | null>(null);
+    const [points, setPoints] = useState<number>(0);
+    const [rebounds, setRebounds] = useState<number>(0);
+    const [assists, setAssists] = useState<number>(0);
 
     const { data: PlayerInformation,
         isLoading: isLoadingPlayerInformation,
@@ -75,8 +80,44 @@ const PlayerDetails = () => {
         enabled: !!playerId,
     });
 
-    const isLoading = isLoadingPlayerInformation || isLoadingPlayerGames || isLoadingPlayerGamesHomeAndAway || isLoadingPlayerStats || isLoadingCarrerPlayer || isLoadingCarrerStats
-    const isError = isErrorPlayerInformation || isErrorPlayerGames || isErrorPlayerGamesHomeAndAway || isErrorPlayerStats || isErrorCarrerPlayer || isErrorCarrerStats
+    const { data: GumbelStats,
+        isLoading: isLoadingGumbelStats,
+        isError: isErrorGumbelStats,
+    } = useQuery({
+        queryKey: ['gumbelStats', playerId, points, rebounds, assists],
+        queryFn: () => getPlayerGumbelStats(Number(playerId), points, rebounds, assists),
+        enabled: !!playerId,
+    });
+
+    const { data: PlayerRegressioLinearStats,
+        isLoading: isLoadingPlayerRegressioLinearStats,
+        isError: isErrorPlayerRegressioLinearStats,
+    } = useQuery({
+        queryKey: ['playerRegressioLinearStats', playerId],
+        queryFn: () => getPlayerRegressionLinearStats(Number(playerId)),
+        enabled: !!playerId,
+    });
+
+    const { data: PlayerRegressionLogisticStats,
+        isLoading: isLoadingPlayerRegressionLogisticStats,
+        isError: isErrorPlayerRegressionLogisticStats,
+    } = useQuery({
+        queryKey: ['playerRegressionLogisticStats', playerId],
+        queryFn: () => getPlayerRegressionLogisticStats(Number(playerId)),
+        enabled: !!playerId,
+    });
+
+    const { data: PlayerGAMStats,
+        isLoading: isLoadingPlayerGAMStats,
+        isError: isErrorPlayerGAMStats,
+    } = useQuery({
+        queryKey: ['playerGAMStats', playerId],
+        queryFn: () => getPlayerGAMStats(Number(playerId)),
+        enabled: !!playerId,
+    });
+
+    const isLoading = isLoadingPlayerInformation || isLoadingPlayerGames || isLoadingPlayerGamesHomeAndAway || isLoadingPlayerStats || isLoadingCarrerPlayer || isLoadingCarrerStats || isLoadingGumbelStats || isLoadingPlayerRegressioLinearStats || isLoadingPlayerRegressionLogisticStats || isLoadingPlayerGAMStats
+    const isError = isErrorPlayerInformation || isErrorPlayerGames || isErrorPlayerGamesHomeAndAway || isErrorPlayerStats || isErrorCarrerPlayer || isErrorCarrerStats || isErrorGumbelStats || isErrorPlayerRegressioLinearStats || isErrorPlayerRegressionLogisticStats || isErrorPlayerGAMStats
 
     const adversaries = useMemo(() => {
         if (!PlayerGames) return [];
@@ -89,8 +130,6 @@ const PlayerDetails = () => {
         if (!selectedAdversary) return PlayerGames;
         return PlayerGames.filter(game => game.Adversario === selectedAdversary);
     }, [PlayerGames, selectedAdversary]);
-
-    console.log(PlayerGamesHomeAndAway)
 
     const renderTabContent = () => {
         switch (selectedTab) {
@@ -169,6 +208,69 @@ const PlayerDetails = () => {
                         )}
                     </>
                 );
+            case 'Modelos Estatísticos':
+                return (
+                    <div>
+                        <h1 style={{ marginTop: '2rem' }}>Modelos Estatísticos</h1>
+                        <div>
+                            <label>Pontos: </label>
+                            <input type="number" value={points} onChange={(e) => setPoints(Number(e.target.value))} />
+                        </div>
+                        <div>
+                            <label>Rebotes: </label>
+                            <input type="number" value={rebounds} onChange={(e) => setRebounds(Number(e.target.value))} />
+                        </div>
+                        <div>
+                            <label>Assistências: </label>
+                            <input type="number" value={assists} onChange={(e) => setAssists(Number(e.target.value))} />
+                        </div>
+                        {GumbelStats && (
+                            <GumbelStatsTable data={GumbelStats} />
+                        )}
+
+                        {PlayerRegressioLinearStats && (
+                            <PredictionGraphs
+                                type='Regressão Linear'
+                                pointsProbabilities={PlayerRegressioLinearStats.points_probabilities}
+                                reboundsProbabilities={PlayerRegressioLinearStats.rebounds_probabilities}
+                                assistsProbabilities={PlayerRegressioLinearStats.assists_probabilities}
+                                pointsConfusionMatrix={PlayerRegressioLinearStats.points_confusion_matrix}
+                                pointsRocCurve={PlayerRegressioLinearStats.points_roc_curve}
+                            />
+                        )}
+
+                        {PlayerRegressionLogisticStats && (
+                            <PredictionGraphs
+                                type='Regressão Logistica'
+                                pointsProbabilities={PlayerRegressionLogisticStats.points_probabilities}
+                                reboundsProbabilities={PlayerRegressionLogisticStats.rebounds_probabilities}
+                                assistsProbabilities={PlayerRegressionLogisticStats.assists_probabilities}
+                                pointsConfusionMatrix={PlayerRegressionLogisticStats.points_probabilities.confusion_matrix}
+                                pointsRocCurve={{
+                                    fpr: PlayerRegressionLogisticStats.points_probabilities.confusion_matrix.map((_, index) => index / (PlayerRegressionLogisticStats.points_probabilities.confusion_matrix.length - 1)),
+                                    tpr: PlayerRegressionLogisticStats.points_probabilities.confusion_matrix.map((_, index) => index / (PlayerRegressionLogisticStats.points_probabilities.confusion_matrix.length - 1)),
+                                    roc_auc: PlayerRegressionLogisticStats.points_probabilities.roc_auc
+                                }}
+                            />
+                        )}
+
+                        {PlayerGAMStats && (
+                            <PredictionGraphs
+                                type='GAM'
+                                pointsProbabilities={PlayerGAMStats.points_probabilities}
+                                reboundsProbabilities={PlayerGAMStats.rebounds_probabilities}
+                                assistsProbabilities={PlayerGAMStats.assists_probabilities}
+                                pointsConfusionMatrix={PlayerGAMStats.points_probabilities.confusion_matrix}
+                                pointsRocCurve={{
+                                    fpr: PlayerGAMStats.points_probabilities.confusion_matrix.map((_, index) => index / (PlayerGAMStats.points_probabilities.confusion_matrix.length - 1)),
+                                    tpr: PlayerGAMStats.points_probabilities.confusion_matrix.map((_, index) => index / (PlayerGAMStats.points_probabilities.confusion_matrix.length - 1)),
+                                    roc_auc: PlayerGAMStats.points_probabilities.roc_auc
+                                }}
+                            />
+                        )}
+
+                    </div>
+                );
             default:
                 return <></>;
         }
@@ -185,7 +287,7 @@ const PlayerDetails = () => {
                     </MarketingText>
                 </MarketingImage>
 
-                <Select options={['Jogos', 'Carreira', 'Estatisticas', 'Gráficos']} onChange={setSelectedTab} />
+                <Select options={['Jogos', 'Carreira', 'Estatisticas', 'Modelos Estatísticos', 'Gráficos']} onChange={setSelectedTab} />
 
                 {renderTabContent()}
             </Container>
